@@ -21,6 +21,13 @@ def get_all_patients():
     result = cur.fetchall()
     return result
 
+def get_all_appointments():
+    con = sqlite3.connect("design.db")
+    cur = con.cursor()
+
+    cur.execute("SELECT * FROM appointments")
+    result = cur.fetchall()
+    return result
 
 def get_patient_by_id(id):
     con = sqlite3.connect("design.db")
@@ -30,6 +37,16 @@ def get_patient_by_id(id):
     row = cur.fetchone()
     con.close()
     return dict(row) if row else None
+
+def get_appointment_by_id(id):
+    con = sqlite3.connect("design.db")
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+    cur.execute("SELECT * FROM appointments WHERE appointment_id = ?", (id,))
+    row = cur.fetchone()
+    con.close()
+    return dict(row) if row else None
+
 
 def insert_patient(patient_id,name, sex, gender, dob, address, race, height, weight, language,
                    heartrate=None, blood_pressure=None, temp=None, blood_oxygen=None, other=None,
@@ -76,19 +93,34 @@ def insert_patient(patient_id,name, sex, gender, dob, address, race, height, wei
     con.commit()
     con.close()
 
+def insert_appointment(appointment_id,patient_id,datetime,symptoms=None,reason=None,doctor=None,notes=None):
+    con = sqlite3.connect("design.db")
+    cur = con.cursor()
+    if datetime is None:
+        datetime = time.time()
+    else:
+        datetime = datetime
+    def wrap(value):
+        return json.dumps({
+            "uuid": str(uuid.uuid4()),
+            "timestamp": datetime,
+            "value": value
+        })
+    cur.execute("""
+        INSERT INTO appointments VALUES (
+            ?, ?, ?, ?, ?, ?, ?
+        )
+    """, (
+        wrap(appointment_id),
+        wrap(patient_id),
+        wrap(datetime),
+        wrap(symptoms),
+        wrap(reason),
+        wrap(doctor),
+        wrap(notes)
+    ))
 
-insert_patient(
-    patient_id=str(uuid.uuid4()),
-    name="Connor Benson",
-    sex="M",
-    gender="Male",
-    dob="1990-04-22",
-    address="123 Oak Street, Tampa, FL",
-    race="White",
-    height=165,
-    weight=60,
-    language="English",
-    phone="555-1234",
-    email="cbbenson@example.com",
-    conditions="Balding, strong loss of hair"
-)
+    con.commit()
+    con.close()
+df = get_all_patients()
+insert_appointment(str(uuid.uuid4()),"31018985-52b1-4230-bfe9-f9c82df24b61",time.time(),"Small cough, balding","Felt sick","Dr. House")
