@@ -127,6 +127,4 @@ def insert_appointment(appointment_id,patient_id,datetime,symptoms=None,reason=N
     ))
     con.commit()
     con.close()
-
-df = get_patient_by_id('921ab67d-55db-4e9a-9dbf-baf279d6cbc9')
-print(df)
+print(get_appointment_by_id("203940d9-5f81-4b5e-90c8-3e62a4d87570"))
