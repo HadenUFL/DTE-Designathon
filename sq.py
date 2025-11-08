@@ -33,22 +33,24 @@ def get_patient_by_id(id):
     con = sqlite3.connect("design.db")
     con.row_factory = sqlite3.Row
     cur = con.cursor()
-    cur.execute("SELECT * FROM patients WHERE patient_id = ?", (id,))
+    cur.execute("SELECT * FROM patients WHERE patient_id LIKE ?", ('%' + id +'%',))
     row = cur.fetchone()
     con.close()
-    return dict(row) if row else None
+    nested_dict = {json.loads(val)["key"]: json.loads(val) for val in row}
+    return nested_dict
 
 def get_appointment_by_id(id):
     con = sqlite3.connect("design.db")
     con.row_factory = sqlite3.Row
     cur = con.cursor()
-    cur.execute("SELECT * FROM appointments WHERE appointment_id = ?", (id,))
+    cur.execute("SELECT * FROM appointments WHERE appointment_id LIKE ?", ('%' + id + '%',))
     row = cur.fetchone()
     con.close()
-    return dict(row) if row else None
+    nested_dict = {json.loads(val)["key"]: json.loads(val) for val in row}
+    return nested_dict
 
 
-def insert_patient(patient_id,name, sex, gender, dob, address, race, height, weight, language,
+def insert_patient(patient_id,name,username,password, sex, gender, dob, address, race, height, weight, language,
                    heartrate=None, blood_pressure=None, temp=None, blood_oxygen=None, other=None,
                    phone=None, email=None, conditions=None, history=None, patient_notes=None, unix=None):
     con = sqlite3.connect("design.db")
@@ -57,37 +59,40 @@ def insert_patient(patient_id,name, sex, gender, dob, address, race, height, wei
         unix = time.time()
     else:
         unix = unix
-    def wrap(value):
+    def wrap(value,key):
         return json.dumps({
             "uuid": str(uuid.uuid4()),
             "timestamp": unix,
+            "key": key,
             "value": value
         })
     cur.execute("""
         INSERT INTO patients VALUES (
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
         )
     """, (
-        wrap(patient_id),
-        wrap(name),
-        wrap(sex),
-        wrap(gender),
-        wrap(dob),
-        wrap(address),
-        wrap(race),
-        wrap(height),
-        wrap(weight),
-        wrap(language),
-        wrap(heartrate),
-        wrap(blood_pressure),
-        wrap(temp),
-        wrap(blood_oxygen),
-        wrap(other),
-        wrap(phone),
-        wrap(email),
-        wrap(conditions),
-        wrap(history),
-        wrap(patient_notes)
+        wrap(patient_id,"patient_id"),
+        wrap(name,"demo_name"),
+        wrap(sex,"demo_sex"),
+        wrap(gender,"demo_gender"),
+        wrap(dob,"demo_dob"),
+        wrap(address,"demo_address"),
+        wrap(race,"demo_race"),
+        wrap(height,"demo_height"),
+        wrap(weight,"demo_weight"),
+        wrap(language,"demo_language"),
+        wrap(heartrate,"vital_heartrate"),
+        wrap(blood_pressure,"vital_bloodpressure"),
+        wrap(temp,"vital_temperature"),
+        wrap(blood_oxygen,"vital_bloodoxygen"),
+        wrap(other,"vital_other"),
+        wrap(phone,"contact_phone"),
+        wrap(email,"contact_email"),
+        wrap(conditions,"conditions_chronic"),
+        wrap(history,"history_appointments"),
+        wrap(patient_notes,"patient_notes"),
+        wrap(username,"username"),
+        wrap(password,"password")
     ))
 
     con.commit()
@@ -100,10 +105,11 @@ def insert_appointment(appointment_id,patient_id,datetime,symptoms=None,reason=N
         datetime = time.time()
     else:
         datetime = datetime
-    def wrap(value):
+    def wrap(value,key):
         return json.dumps({
             "uuid": str(uuid.uuid4()),
             "timestamp": datetime,
+            "key":key,
             "value": value
         })
     cur.execute("""
@@ -111,16 +117,16 @@ def insert_appointment(appointment_id,patient_id,datetime,symptoms=None,reason=N
             ?, ?, ?, ?, ?, ?, ?
         )
     """, (
-        wrap(appointment_id),
-        wrap(patient_id),
-        wrap(datetime),
-        wrap(symptoms),
-        wrap(reason),
-        wrap(doctor),
-        wrap(notes)
+        wrap(appointment_id,"appointment_id"),
+        wrap(patient_id,"patient_id"),
+        wrap(datetime,"datetime"),
+        wrap(symptoms,"appointment_symptoms"),
+        wrap(reason,"appointment_reasons"),
+        wrap(doctor,"appointment_doctor"),
+        wrap(notes,"appointment_notes")
     ))
-
     con.commit()
     con.close()
-df = get_all_patients()
-insert_appointment(str(uuid.uuid4()),"31018985-52b1-4230-bfe9-f9c82df24b61",time.time(),"Small cough, balding","Felt sick","Dr. House")
+
+df = get_patient_by_id('921ab67d-55db-4e9a-9dbf-baf279d6cbc9')
+print(df)
